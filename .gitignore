@@ -1,0 +1,14 @@
+bin/
+obj/
+Properties/
+
+*.user
+*.suo
+*.userosscache
+*.vs/
+
+*.log
+*.tmp
+*.swp
+
+!git-profile.csproj
