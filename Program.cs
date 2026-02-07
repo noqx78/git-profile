@@ -40,10 +40,20 @@ internal class Program
         {
             switch (args[0].ToLower())
             {
+                case "use":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Usage: git-profile use <profile name>");
+                        return;
+                    }
+                    string selectedProfile = args[1];
+                    use(selectedProfile, profileConfig);
+                    break;
                 case "create":
                     if (args.Length < 4)
                     {
                         Console.WriteLine("Usage: git-profile create <name> <email> <profile name>");
+                        return;
                     }
                     string name = args[1];
                         string email = args[2];
@@ -51,15 +61,24 @@ internal class Program
                         create(name, email, profileName, profileConfig);
                         break;
 
-                    break;
                 case "delete":
 
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Usage: git-profile delete <profile name>");
+                        return;
+                    }
+                    string profile = args[1];
+
+                    delete(profile, profileConfig);
                     break;
+
                 case "list":
                     list(profileConfig);
                     break;
                 case "help":
                     Console.WriteLine("         who                                    - Show current git config");
+                    Console.WriteLine("         use <profile name>                     - Use selected profile");
                     Console.WriteLine("         create <name> <email> <profile name>   - Create a new profile");
                     Console.WriteLine("         delete <profile name>                  - delete profile");
                     Console.WriteLine("         list                                   - List all profiles");
@@ -88,7 +107,26 @@ internal class Program
         }
     }
 
-    static void create(string profileName, string userName, string email, string profileConfig)
+    static void use(string selectedProfile, string profileConfig)
+    {
+        var jsonContent = File.ReadAllText(profileConfig);
+        var node = JsonNode.Parse(jsonContent);
+        var foundProfile = node?["profiles"]?.AsArray()
+            .FirstOrDefault(p => p?["profileName"]?.GetValue<string>() == selectedProfile);
+
+        if (foundProfile != null)
+        {
+            string n = foundProfile["userName"]!.GetValue<string>();
+            string e = foundProfile["email"]!.GetValue<string>();
+            SetGitConfig(n, e);
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    static void create(string userName, string email, string profileName, string profileConfig)
     {
         try
         {
@@ -125,6 +163,31 @@ internal class Program
 
     }
 
+    static void delete(string profileName, string profileConfig)
+    {
+        try
+        {
+            var json = JsonNode.Parse(File.ReadAllText(profileConfig))!;
+            var profiles = json["profiles"]!.AsArray();
+
+            for (int i = profiles.Count - 1; i >= 0; i--)
+            {
+                string currentProfileName = profiles[i]!["profileName"]!.GetValue<string>();
+                if (currentProfileName == profileName)
+                {
+                    profiles.RemoveAt(i);
+                }
+            }
+
+            File.WriteAllText(profileConfig, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fehler: {ex.Message}");
+        }
+    }
+
+
     static string GetGitConfig(string key)
     {
         var process = new Process
@@ -144,5 +207,32 @@ internal class Program
         process.WaitForExit();
 
         return output;
+    }
+
+
+    static void SetGitConfig(string name, string email)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = $"config --global user.name \"{name}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            })?.WaitForExit();
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = $"config --global user.email \"{email}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            })?.WaitForExit();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating git config: {ex.Message}");
+        }
     }
 }
