@@ -80,7 +80,7 @@ internal class Program
                     Console.WriteLine("         who                                    - Show current git config");
                     Console.WriteLine("         use <profile name>                     - Use selected profile");
                     Console.WriteLine("         create <name> <email> <profile name>   - Create a new profile");
-                    Console.WriteLine("         delete <profile name>                  - delete profile");
+                    Console.WriteLine("         delete <profile name>                  - Delete profile");
                     Console.WriteLine("         list                                   - List all profiles");
                     Console.WriteLine("         help                                   - help");
                     break;
