@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
-using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-
+using System.Text.Json.Nodes;
 
 internal class Program
 {
@@ -20,24 +18,17 @@ internal class Program
 
         string profileConfig = (@$"{path}/gitprofile.json");
 
-        List<string> profileIndex = new List<string>();
 
-        var jsonDoc = JsonDocument.Parse(File.ReadAllText(profileConfig));
-        foreach (var profile in jsonDoc.RootElement.GetProperty("profiles").EnumerateArray())
-        {
-            profileIndex.Add(profile.GetProperty("profileName").GetString());
-        }
-
-
-            if (!Directory.Exists(path))
+        if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
-            System.IO.File.Create($"{path}/gitprofile.json");
+            File.WriteAllText($"{path}/gitprofile.json", "{\"profiles\": []}");
+
         }
 
         if (!File.Exists($"{path}/gitprofile.json"))
         {
-            System.IO.File.Create($"{path}/gitprofile.json");
+            File.WriteAllText($"{path}/gitprofile.json", "{\"profiles\": []}");
         }
 
         if (args.Length == 0)
@@ -50,6 +41,16 @@ internal class Program
             switch (args[0].ToLower())
             {
                 case "create":
+                    if (args.Length < 4)
+                    {
+                        Console.WriteLine("Usage: git-profile create <name> <email> <profile name>");
+                    }
+                    string name = args[1];
+                        string email = args[2];
+                        string profileName = args[3];
+                        create(name, email, profileName, profileConfig);
+                        break;
+
                     break;
                 case "delete":
 
@@ -85,6 +86,43 @@ internal class Program
             Console.WriteLine($" {profile.GetProperty("email").GetString()}"); ;
             Console.WriteLine();
         }
+    }
+
+    static void create(string profileName, string userName, string email, string profileConfig)
+    {
+        try
+        {
+
+
+            var jsonNode = JsonNode.Parse(File.ReadAllText(profileConfig))!;
+            var profilesArray = jsonNode["profiles"]!.AsArray();
+            bool profileExists = profilesArray.Any(p => p!["profileName"]!.GetValue<string>() == profileName);
+
+            profilesArray.Add(
+            new JsonObject
+            {
+                ["profileName"] = profileName,
+                ["userName"] = userName,
+                ["email"] = email
+            }
+
+    );
+
+            if (profileName != null && !profileExists )
+            {
+            File.WriteAllText(profileConfig, jsonNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.WriteLine($"Profile '{profileName}' already exists or is empty.");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.Write(ex.ToString());
+        }
+
     }
 
     static string GetGitConfig(string key)
