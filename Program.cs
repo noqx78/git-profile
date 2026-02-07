@@ -20,6 +20,8 @@ internal class Program
 
         string profileConfig = (@$"{path}/gitprofile.json");
 
+
+
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
@@ -27,7 +29,7 @@ internal class Program
         }
 
         if (!File.Exists($"{path}/gitprofile.json"))
-                    {
+        {
             System.IO.File.Create($"{path}/gitprofile.json");
         }
 
@@ -42,6 +44,9 @@ internal class Program
             {
                 case "create":
                     break;
+                case "delete":
+
+                    break;
                 case "list":
                     list(profileConfig);
                     break;
@@ -53,7 +58,7 @@ internal class Program
                     Console.WriteLine("         help                                   - help");
                     break;
                 case "who":
-                    Console.WriteLine($" user.name: {userName}" );
+                    Console.WriteLine($" user.name: {userName}");
                     Console.WriteLine($" user.email: {userEmail}");
                     break;
                 default:
@@ -65,7 +70,14 @@ internal class Program
 
     static void list(string profileConfig)
     {
-        Console.WriteLine(File.ReadAllText(profileConfig));
+        var jsonDoc = JsonDocument.Parse(File.ReadAllText(profileConfig));
+        foreach (var profile in jsonDoc.RootElement.GetProperty("profiles").EnumerateArray())
+        {
+            Console.WriteLine($"[{profile.GetProperty("profileName").GetString()}]");
+            Console.WriteLine($" {profile.GetProperty("userName").GetString()}");
+            Console.WriteLine($" {profile.GetProperty("email").GetString()}"); ;
+            Console.WriteLine();
+        }
     }
 
     static string GetGitConfig(string key)
