@@ -20,9 +20,16 @@ internal class Program
 
         string profileConfig = (@$"{path}/gitprofile.json");
 
+        List<string> profileIndex = new List<string>();
+
+        var jsonDoc = JsonDocument.Parse(File.ReadAllText(profileConfig));
+        foreach (var profile in jsonDoc.RootElement.GetProperty("profiles").EnumerateArray())
+        {
+            profileIndex.Add(profile.GetProperty("profileName").GetString());
+        }
 
 
-        if (!Directory.Exists(path))
+            if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
             System.IO.File.Create($"{path}/gitprofile.json");
